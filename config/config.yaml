@@ -1,0 +1,11 @@
+library_paths:
+    shotgun: 'z:\Dev\python-api'
+
+shotgun:
+    site: 'https://temporary.shotgunstudio.com'
+    script_name: 'test'
+    api_key: '7dec6edd4fc0b8de83ffc2c890b089288801b4e923454233148f5b053d153bd8'
+    word_site: "http://svnweb.freebsd.org/csrg/share/dict/words?view=co&content-type=text/plain"
+    sample_word_count: 300
+    feature_list: [ 'sg_description', 'tags', 'content']
+    cost: 'time_logs_sum'
