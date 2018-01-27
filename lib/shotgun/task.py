@@ -11,7 +11,9 @@ class SGTaskManager(object):
     def get_all_task(self):
 
         task_field_list = self.sg_handler.schema_field_read('Task')
+        print 'task collect started.'
         task_list = self.sg_handler.find('Task', [], task_field_list.keys())
+        print 'task collect finished.'
 
         valid_task_list = list()
         for task in task_list:
@@ -23,13 +25,16 @@ class SGTaskManager(object):
     def get_all_feature_from_task(self):
 
         sg_feature_list = self.sg_config['feature_list']
-        print sg_feature_list
         cost = self.sg_config['cost']
         task_list = self.get_all_task()
 
         task_data_list = list()
 
-        for task in task_list:
+        index = 0
+        for task in task_list[:300]:
+            index = index + 1
+            print 'task count : ' + str(index)
+
             feature_list = list()
             for feature_field in sg_feature_list:
                 print task

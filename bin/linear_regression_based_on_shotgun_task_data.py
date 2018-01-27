@@ -10,5 +10,7 @@ from lib.machine_learning.data_generator import DataGenerator
 sg_task_manager = SGTaskManager()
 all_feature = sg_task_manager.get_all_feature_from_task()
 
+print 'get_all_feature_from_task finished.'
+
 data_generator = DataGenerator()
-df = data_generator.generate_data_from_task(all_feature)
+df = data_generator.generate_data_from_task(all_feature[:200])

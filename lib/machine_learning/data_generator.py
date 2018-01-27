@@ -7,8 +7,11 @@ class DataGenerator(object):
     def generate_data_from_task(self, task_data_list):
 
         df = None
+        index = 0
         for x in task_data_list[:300]:
 
+            index = index + 1
+            print 'generate data : ' + str(index)
             if df is None:
                 key = pd.DataFrame(list(x['feature_list']), columns=['key'])
                 value = pd.DataFrame(np.ones(len(x['feature_list'])), columns=[x['id']])
