@@ -13,9 +13,9 @@ def get_shotgun_handler():
     from shotgun_api3.shotgun import Shotgun
 
     shotgun_handler = Shotgun(
-        config['shotgun']['site'],
-        script_name=config['shotgun']['script_name'],
-        api_key=config['shotgun']['api_key']
+        config['shotgun']['connection']['site'],
+        script_name=config['shotgun']['connection']['script_name'],
+        api_key=config['shotgun']['connection']['api_key']
     )
 
     return shotgun_handler
