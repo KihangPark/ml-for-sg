@@ -1,10 +1,9 @@
 
 
-class CoreEngine(object):
+class MLCore(object):
 
     def __init__(self, target_data):
         self.target_data = target_data
-        pass
 
     def select_model(self):
         """Select model.
@@ -26,3 +25,6 @@ class CoreEngine(object):
         """
         pass
 
+class LinearRegression(MLCore):
+
+    def

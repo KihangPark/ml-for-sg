@@ -2,7 +2,7 @@ import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 
 
-class DataConvertHandler(object):
+class DataConverter(object):
 
     def __init__(self, target_data_list):
         self.target_data_list = target_data_list
@@ -65,7 +65,6 @@ class DataConvertHandler(object):
                 for column in data_df.columns:
                     if column in feature_dictionary.keys():
                         additional_data_values.append(feature_dictionary[column])
-                        print additional_data_values
                     else:
                         additional_data_values.append(0)
                 additional_data_df = pd.DataFrame(
