@@ -2,9 +2,8 @@
 
 class MLBase(object):
 
-    def __init__(self, target_data):
-        self.target_data = target_data
-        self.model = self.get_model()
+    def __init__(self, **kwargs):
+        pass
 
     def get_model(self):
         pass
@@ -15,6 +14,6 @@ class MLBase(object):
     def verification(self):
         pass
 
-    def predict(self, data):
+    def predict(self, **kwargs):
         pass
 
