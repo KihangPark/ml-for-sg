@@ -2,14 +2,14 @@ import urllib2
 import random
 
 from lib.utils.utils import load_config
-from lib.shotgun.shotgun_utils import get_shotgun_handler
+from lib.shotgun.utils import get_shotgun_handler
 
 
 def get_sample_word_list():
 
     config = load_config()
-    word_site = config['shotgun']['word_site']
-    word_count = config['shotgun']['sample_word_count']
+    word_site = config['shotgun']['sample_generation']['word_site']
+    word_count = config['shotgun']['sample_generation']['sample_word_count']
 
     response = urllib2.urlopen(word_site)
     txt = response.read()
@@ -28,9 +28,12 @@ def register_sample_sg_data(task_list):
         temp_rand_word = []
         temp_rand_tag = []
 
-        for m in range(0, 3):
+        # prepare random word list for sg_description
+        for _ in range(0, 3):
             temp_rand_word.append(random.choice(word_list))
-        for m in range(0, 3):
+
+        # prepare random tags
+        for _ in range(0, 3):
             random_tag_name = random.choice(word_list)
             filters = [['name', 'is', random_tag_name]]
             result = shotgun_handler.find_one('Tag', filters)
@@ -50,7 +53,7 @@ def register_sample_sg_data(task_list):
         shotgun_handler.update('Task', task['id'], data)
 
 
-def register_heavy_task_samples(task_list):
+def register_heavy_feature_tag(task_list):
 
     shotgun_handler = get_shotgun_handler()
 
@@ -71,6 +74,8 @@ def register_heavy_task_samples(task_list):
     for task in task_list[:100]:
 
         tags = task['tags']
+        tags.append(heavy_feature_tag)
+        tags.append(heavy_feature2_tag)
         data = {
 
             'entity': task['entity'],

@@ -14,10 +14,20 @@ class SGDataManager(object):
         self.text_config = self.sg_data_config['text']
         self.cost = self.sg_data_config['cost']
 
-    def get_target_list(self):
+    def get_target_list(self, project_id=70, limit=200):
 
+        filters = []
+        if project_id:
+            filters = [
+                ['project', 'is', {'type': 'Project', 'id': project_id}]
+                ]
         schema_field_list = self.sg_handler.schema_field_read(self.target_schema)
-        target_list = self.sg_handler.find(self.target_schema, [], schema_field_list.keys())
+        target_list = self.sg_handler.find(
+            self.target_schema,
+            filters,
+            schema_field_list.keys(),
+            limit=limit
+        )
 
         valid_task_list = []
         for target in target_list:
