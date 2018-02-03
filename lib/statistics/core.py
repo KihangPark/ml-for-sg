@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 
-class CoreEngine(object):
+class StatisticsBase(object):
 
     def __init__(self, target_data):
         self.target_data = target_data
