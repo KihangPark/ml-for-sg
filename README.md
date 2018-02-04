@@ -82,11 +82,18 @@ So 'cost' input value will be needed for testing.
 Below simple api can be used to push dummy cost data to sample shotgun site.
 After getting 30 trial shotgun site, below process can be used for pushing dummy tag, description.
 
+    # Set root package root directory.
     import os
     os.environ['ML_FOR_SG_ROOT'] = <path to package> (For example, 'C:\Dev\ml-for-sg')
+
+    # Create shotgun data manager.
     from lib.shotgun.base import SGDataManager
     sg_data_manager = SGDataManager()
+
+    # Get target list.
     target_list = sg_data_manager.get_target_list()
+
+    # Register dummy tag / description to shotgun.
     from lib.shotgun.utils_for_dummy_data_generation import register_sample_sg_data, register_heavy_feature_tag
     register_sample_sg_data(target_list)
     register_heavy_feature_tag(target_list)
@@ -97,7 +104,40 @@ After this operation, shotgun site will have dummy tag / description values.
 
 ## Sample Prediction
 
+After 'cost' dummy value were prepared, it is possible to test prediction.
+Below simple api can be used to test some prediction process.
 
+    # Set root package root directory.
+    import os
+    os.environ['ML_FOR_SG_ROOT'] = <path to package> (For example, 'C:\Dev\ml-for-sg')
+
+    # Create shotgun data manager.
+    from lib.shotgun.base import SGDataManager
+    sg_data_manager = SGDataManager()
+
+    # Get shotgun information from shotgun site.
+    target_data = sg_data_manager.get_data()
+
+    # Convert shotgun informatoin to pandas DataFrame format.
+    from lib.utils.data_converter import DataConverter
+    data_converter = DataConverter(target_data)
+    pd_data = data_converter.convert_to_panda()
+
+    # Create linear regression model.
+    from lib.ml.linear_regression import LinearRegression
+    lr = LinearRegression(pd_data['data_df'], pd_data['cost_df'])
+
+    # Fit pandas DataFrame information to model.
+    lr.fit()
+
+    # Predict sample data.
+    lr.predict(pd_data['data_df'].head())
+
+In this case, used same data information for prediction test.
+Of course this prediction returns same value with original cost value.
+User can compare last line result with below.
+
+    pd_data['cost_df'].head().values
 
 Some useful direct links:
 
