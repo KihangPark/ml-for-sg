@@ -11,15 +11,3 @@ def load_config():
 
     return config
 
-
-def load_sg_config():
-
-    config = load_config()
-    return config['shotgun']
-
-
-def load_sg_data_config():
-
-    config = load_config()
-    return config['shotgun']['data']
-
