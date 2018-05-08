@@ -1,0 +1,119 @@
+@startuml
+
+abstract class SourceGenerator {
+    #_resource_handler : ResourceHandler
+    +{abstract} generate_source_data() : void
+}
+
+class ShotgunSourceGenerator {
+    -_get_raw_data() : dict
+    -_save_raw_data(dict) : str
+    -_convert_to_source_data(dict) : {'description_features': DataFrame, 'non_description_features': DataFrame, 'target_feature': DataFrame}
+    -_save_source_data(dict) : str
+    +generate_source_data() : {'description_features': DataFrame, 'non_description_features': DataFrame, 'target_feature': DataFrame}
+}
+
+class ShotgunSourceGenerator
+    note left : generate_source_data function execute below sequencial processes. \n 1. gather raw data from shotgun. \n 2. save raw data. \n 3. convert raw data to panda data. \n 4. save panda data.
+
+ShotgunSourceGenerator <|-- SourceGenerator
+ShotgunSourceGenerator o-- ResourceHandler
+
+class ResourceHandler {
+    +raw_data_file_name : str
+    +source_data_file_name : str
+    +resource_data_file_name : str
+    +source_analyze_report_file_name : str
+    +train_result_report_file_name : str
+    -_generate_raw_file_name() : str
+    -_generate_source_file_name() : str
+    -_generate_resource_file_name() : str
+    -_generate_source_analyze_report_file_name() : str
+    -_generate_train_result_report_file_name() : str
+    +save_raw_data() : str
+    +save_source_data() : str
+    +save_resource_data() : str
+    +load_raw_data() : dict
+    +load_source_data() : dict
+    +load_resource_data() : dict
+    +generate_source_analyze_configure_file_name() : str
+    +load_source_analyze_configure() : dict
+    +generate_train_result_file_name() : str
+    +load_train_result() : dict
+}
+
+class ResourceHandler
+    note left : this class control all of data resource and files.
+
+class FeatureAnalyzer {
+    -_resource_handler : ResourceHandler
+    +source_data : DataFrame
+    -_save_source_analyze_report() : void
+    -_save_source_analyze_configure_template() : void
+    +analyze() : void
+    +load_source_data(str) : void
+    +save_source_analyze_configure(dict) : void
+}
+
+class FeatureAnalyzer
+    note left : this class generate analyzed report based on panda DataFrame data.
+
+FeatureAnalyzer o-- ResourceHandler
+
+class DataProcessor {
+    -_resource_handler : ResourceHandler
+    -_source_data : dict
+    -_source_analyze_configure : dict
+    -_filter_skip_features() : dict
+    -_filter_irregular_data() : dict
+    -_save_resource_data(dict) : str
+    +load_source_data() : void
+    +load_source_analyze_configure() : void
+    +generate_resource_data() : str
+}
+
+DataProcessor o-- ResourceHandler
+
+class DataProcessor
+    note left : this class generate actual resource data for machine learning Model. \n All filtering and preprocess function can be placed in this class.
+
+abstract class BaseModel {
+    -_resource_handler : ResourceHandler
+    +{abstract} load_resource() : void
+}
+
+class LinearRegressionModel {
+    -_resource_data : dict
+    +fit() : void
+    +load_resource_data() : void
+    +load_trained_model() : void
+}
+
+BaseModel <|-- LinearRegressionModel
+BaseModel o-- ResourceHandler
+
+class Trainer {
+    -_model : LinearRegressionModel
+    -_resource_handler : ResourceHandler
+    +set_model() : void
+    +train_model() : void
+    +save_train_result() : void
+}
+
+Trainer o-- ResourceHandler
+Trainer o-- BaseModel
+
+class Estimator {
+    -_model : LinearRegressionModel
+    -_resource_handler : ResourceHandler
+    +load_model(LinearRegressionModel) : void
+    +estimate(dict) : int
+}
+
+Estimator o-- ResourceHandler
+Estimator o-- LinearRegressionModel
+
+class Estimator
+    note left : this class is the actual class for other application. \n flask can be used for this method and reply proper estimated cost.
+
+@enduml

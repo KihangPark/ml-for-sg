@@ -1,5 +1,3 @@
-
-
 class FilterHandler(object):
 
     def __init__(self):

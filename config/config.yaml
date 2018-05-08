@@ -1,24 +1,19 @@
 library_paths:
-    shotgun: '<path to shotgun package>'
+    shotgun: 'Z:\Dev\python-api'
 
-shotgun:
-    connection:
-        site: '<shotgun site url>'
-        script_name: '<script name>'
-        api_key: '<api key>'
-    sample_generation:
-        word_site: "http://svnweb.freebsd.org/csrg/share/dict/words?view=co&content-type=text/plain"
-        sample_word_count: 300
-    data:
-        target_schema: 'Task'
-        keyword:
-            feature_list: []
-        value:
-            feature_list: []
-        text:
-            feature_list: ['sg_description', 'tags', 'content']
-        cost: 'time_logs_sum'
-
-machine_learning:
-
-statistics:
+model:
+trainer:
+data_processor:
+resource_handler:
+source_generator:
+    shotgun:
+        connection:
+            site: 'https://mathleonb.shotgunstudio.com'
+            script_name: 'api_test'
+            api_key: '66d137c6642dcf730bddc7bd3ca06f717b4ab703186cef238f643c02c890f9c7'
+        data:
+            source_schema: 'Shot' # Target Granularity
+            text:
+                feature_list: ['sg_description', 'tags', 'content']
+            cost: 'time_logs_sum'
+            skip_features:

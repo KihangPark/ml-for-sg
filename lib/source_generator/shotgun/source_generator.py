@@ -6,7 +6,9 @@ import matplotlib.pyplot as plt
 from lib.source_generator.shotgun.utils import get_shotgun_handler
 from lib.source_generator.base_source_generator import BaseSourceGenerator
 # TODO: replace real data.
-from tests.fixtures.mocked_shotgun_data import MOCKED_SHOT_BASE_GENERATED_SOURCE
+#import sys
+#print sys.path
+#from tests.fixtures.mocked_shotgun_data import MOCKED_SHOT_BASE_GENERATED_SOURCE
 
 
 class ShotgunSourceGenerator(BaseSourceGenerator):
@@ -20,11 +22,11 @@ class ShotgunSourceGenerator(BaseSourceGenerator):
             raise Exception('shotgun connection failed.')
         self.data_config = self.generator_config['shotgun']['data']
         self.source_schema = self.data_config['source_schema']
-        self.keyword = self.data_config['keyword']
-        self.value = self.data_config['value']
-        self.text = self.data_config['text']
+        #self.keyword = self.data_config['keyword']
+        #self.value = self.data_config['value']
+        #self.text = self.data_config['text']
         self.cost = self.data_config['cost']
-        self.skip_feature_list = self.data_config['skip_feature_list']
+        self.skip_features = self.data_config['skip_features']
 
     def generate_input_data(self):
 
@@ -113,7 +115,7 @@ class ShotgunSourceGenerator(BaseSourceGenerator):
         return feature_dict
 
     def convert_source_to_panda_data(self, source):
-        source = MOCKED_SHOT_BASE_GENERATED_SOURCE
+        #source = MOCKED_SHOT_BASE_GENERATED_SOURCE
 
         column_data = self.generate_column_data(source)
         df_y_full = self.generate_cost_data(source)

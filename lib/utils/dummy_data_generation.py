@@ -2,20 +2,102 @@ import urllib2
 import random
 
 
-def get_sample_word_list(generator_config):
+def get_raw_sources(handler):
+    raw_sources = []
+    for code in ['bunny_010_0010', 'bunny_010_0020', 'bunny_010_0030', 'bunny_010_0040', 'bunny_010_0050']:
+        raw_sources.append(get_raw_shot_source(handler, code))
+    return raw_sources
 
-    word_site = generator_config['shotgun']['sample_generation']['word_site']
-    word_count = generator_config['shotgun']['sample_generation']['sample_word_count']
 
-    response = urllib2.urlopen(word_site)
+def get_raw_shot_source(handler, code, project_id=70, limit=100):
+    # Generate filter for project.
+    if project_id:
+        filters = [
+            [
+                'project', 'is', {'type': 'Project', 'id': project_id}
+            ], [
+                'code', 'is', code
+            ]
+        ]
+    else:
+        return []
+
+    # Get source data from shotgun.
+    schema_field_list = handler.schema_field_read('Shot')
+    sources = handler.find(
+        'Shot',
+        filters,
+        schema_field_list.keys(),
+        limit=limit
+    )
+
+    valid_sources = []
+    for source in sources:
+        # Filter out improper project source.
+        if not source['project']:
+            continue
+        valid_sources.append(source)
+
+    return valid_sources
+
+
+def get_raw_task_source(handler, code, project_id=70, limit=100):
+    # Generate filter for project.
+    if project_id:
+        filters = [
+            [
+                'project', 'is', {'type': 'Project', 'id': project_id}
+            ], [
+                'code', 'is', code
+            ]
+        ]
+    else:
+        return []
+
+    # Get source data from shotgun.
+    schema_field_list = handler.schema_field_read('Shot')
+    sources = handler.find(
+        'Shot',
+        filters,
+        schema_field_list.keys(),
+        limit=limit
+    )
+
+    task_sources = []
+    schema_field_list = handler.schema_field_read('Task')
+    for task in sources[0]['tasks']:
+        filters = [
+            [
+                'project', 'is', {'type': 'Project', 'id': project_id}
+            ], [
+                'id', 'is', task['id']
+            ]
+        ]
+        sources = handler.find(
+            'Task',
+            filters,
+            schema_field_list.keys(),
+            limit=limit
+        )
+        task_sources.append(sources[0])
+
+    return task_sources
+
+
+def get_sample_word_list(site=None, sample_word_count=300):
+
+    if not site:
+        site = "http://svnweb.freebsd.org/csrg/share/dict/words?view=co&content-type=text/plain"
+
+    response = urllib2.urlopen(site)
     txt = response.read()
-    word_list = txt.splitlines()[:word_count]
+    word_list = txt.splitlines()[:sample_word_count]
     return word_list
 
 
-def register_sample_sg_data(handler, source, generator_config):
+def register_sample_sg_data(handler, source):
 
-    word_list = get_sample_word_list(generator_config)
+    word_list = get_sample_word_list()
 
     for single_source in source:
 
@@ -80,7 +162,7 @@ def register_heavy_feature_tag(handler, source):
         data = {
             'entity': single_source,
             'project': single_source['project'],
-            'duration': 4800
+            'duration': int(random.random() * 1000)
 
         }
 
