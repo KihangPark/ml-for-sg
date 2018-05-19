@@ -1,5 +1,6 @@
 library_paths:
     shotgun: 'Z:\Dev\python-api'
+package_root: 'Z:\Dev\Github\ml-for-sg'
 
 model:
 trainer:
@@ -14,6 +15,6 @@ source_generator:
         data:
             source_schema: 'Shot' # Target Granularity
             text:
-                feature_list: ['sg_description', 'tags', 'content']
-            cost: 'time_logs_sum'
-            skip_features:
+                feature_list: ['description', 'tags', 'notes', 'open_notes']
+            cost: 'duration'
+            skip_features: ['id', 'created_at', 'image', 'project', 'updated_at']

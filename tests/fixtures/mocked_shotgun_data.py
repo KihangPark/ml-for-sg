@@ -2235,3 +2235,6 @@ MOCKED_SHOT_BASE_GENERATED_SOURCE = {
     'tasks': 'anim - anim, comp - comp, dmp - window dmp, layout - layout_assembly, light - light, paint - paint, roto - roto, stereo - stereo, techanim - fur.sim, techanim - suit.sim, track - camera_track_mp_v0001, track - QC_Screens',
     'type': 'Shot',
     'updated_by': 'Tom Luna'}}
+
+
+MOCKED_SHOT_RAW_DATA =

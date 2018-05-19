@@ -1,8 +1,11 @@
 import pandas as pd
+from collections import defaultdict
 import seaborn as sns
 import matplotlib.pyplot as plt
+from sklearn.feature_extraction.text import CountVectorizer
 
 
+from lib.resource.resource_handler import ResourceHandler
 from lib.source_generator.shotgun.utils import get_shotgun_handler
 from lib.source_generator.base_source_generator import BaseSourceGenerator
 # TODO: replace real data.
@@ -22,13 +25,15 @@ class ShotgunSourceGenerator(BaseSourceGenerator):
             raise Exception('shotgun connection failed.')
         self.data_config = self.generator_config['shotgun']['data']
         self.source_schema = self.data_config['source_schema']
+        self.skip_features = self.data_config['skip_features']
         #self.keyword = self.data_config['keyword']
         #self.value = self.data_config['value']
-        #self.text = self.data_config['text']
+        self.text = self.data_config['text']
         self.cost = self.data_config['cost']
         self.skip_features = self.data_config['skip_features']
+        self.resource_handler = ResourceHandler()
 
-    def generate_input_data(self):
+    def generate_source_data(self):
 
         # Get raw source.
         raw_source = self.get_raw_source()
@@ -38,7 +43,7 @@ class ShotgunSourceGenerator(BaseSourceGenerator):
 
         return panda_data
 
-    def get_raw_source(self, project_id, limit=100):
+    def get_raw_data(self, project_id, limit=100):
 
         # Generate filter for project.
         if project_id:
@@ -68,82 +73,131 @@ class ShotgunSourceGenerator(BaseSourceGenerator):
 
         return valid_sources
 
-    def convert_raw_source_to_panda_data(self, raw_source):
+    def convert_raw_to_source_data(self, raw_data):
 
-        source = self.reformat_raw_source(raw_source)
-        panda_data = self.convert_raw_source_to_panda_data(source)
+        modified_raw_data = self.reformat_raw_data(raw_data)
+        panda_data = self.convert_raw_to_panda(modified_raw_data)
 
         return panda_data
 
-    def reformat_raw_source(self, raw_source):
+    def reformat_raw_shot_data(self, raw_shot_data, limit=0):
+        modified_raw_shot_data = dict()
+        schema_field_list = self.handler.schema_field_read('Task')
 
-        source = []
-        for single_raw_source in raw_source:
+        for raw_shot_datum in raw_shot_data:
 
-            # Get cost feature.
-            cost_feature = single_raw_source[self.cost]
+            task_sources = []
+            cost_feature = 0
+            text_feature = {}
+            for task in raw_shot_datum['tasks']:
+                filters = [
+                    [
+                        'project', 'is', {'type': 'Project', 'id': raw_shot_datum['project']['id']}
+                    ], [
+                        'id', 'is', task['id']
+                    ]
+                ]
+                task_source = self.handler.find(
+                    'Task',
+                    filters,
+                    schema_field_list.keys(),
+                    limit=1
+                )[0]
+
+                # Get cost feature.
+                cost_feature = cost_feature + task_source[self.cost]
 
             # Get text feature dict.
-            text_feature_dict = self.get_field_data(single_raw_source, self.text['feature_list'])
+            text_features, value_features = self.get_field_data(raw_shot_datum, self.text['feature_list'])
 
-            # get keyword feature
-            keyword_feature_dict = dict()
-
-            # get value feature
-            value_feature_dict = dict()
-
-            source.append({
-                'id': single_raw_source['id'],
+            modified_raw_shot_data.update({
+                raw_shot_datum['code']: {
+                'id': raw_shot_datum['id'],
                 'feature_dict': {
-                    'text_feature': text_feature_dict,
-                    'keyword_feature': keyword_feature_dict,
-                    'value_feature': value_feature_dict
+                    'text_features': text_features,
+                    'value_features': value_features
                 },
-                'cost': cost_feature})
+                'cost': cost_feature}}
+            )
 
-        return source
+        return modified_raw_shot_data
 
-    def get_field_data(self, single_raw_source, feature_list):
+    def get_field_data(self, raw_data, text_features):
 
-        feature_dict = dict()
-        for feature in feature_list:
-            if isinstance(single_raw_source[feature], list):
-                for field in single_raw_source[feature]:
-                    feature_dict.update({feature: field['name']})
+        text_feature_dict = dict()
+        value_feature_dict = dict()
+        for feature in raw_data.keys():
+            if feature in self.skip_features:
+                continue
+            if feature in text_features:
+                target_feature_dict = text_feature_dict
             else:
-                feature_dict.update({feature: single_raw_source[feature]})
-        return feature_dict
+                target_feature_dict = value_feature_dict
+            if isinstance(raw_data[feature], list):
+                list_value = []
+                for value in raw_data[feature]:
+                    if isinstance(value, dict):
+                        list_value.append(value['name'])
+                    else:
+                        list_value.append(value)
+                if list_value and isinstance(list_value[0], str):
+                    target_feature_dict.update({feature: self.get_word_list(','.join(list_value))})
+                if list_value and (isinstance(list_value[0], int) or isinstance(list_value[0], float)):
+                    target_feature_dict.update({feature: sum(list_value)})
+            elif isinstance(raw_data[feature], dict):
+                target_feature_dict[feature] = raw_data[feature]['name']
+            else:
+                if feature in text_features:
+                    target_feature_dict.update({feature: self.get_word_list(raw_data[feature])})
+                else:
+                    target_feature_dict.update({feature: raw_data[feature]})
+        return text_feature_dict, value_feature_dict
 
-    def convert_source_to_panda_data(self, source):
+    def get_word_list(self, text):
+        count_vectorizer = CountVectorizer()
+        count_vectorizer.fit_transform([text])
+        feature_names = count_vectorizer.get_feature_names()
+        return ','.join(feature_names)
+
+    def convert_raw_data_to_panda_source(self, raw_data):
         #source = MOCKED_SHOT_BASE_GENERATED_SOURCE
 
-        column_data = self.generate_column_data(source)
-        df_y_full = self.generate_cost_data(source)
-        df_x_full, heatmap = self.generate_feature_data(source, column_data, df_y_full)
+        value_column_data = self.generate_value_column_data(raw_data)
+        text_column_data = self.generate_text_column_data(raw_data)
+        df_y_full = self.generate_cost_data(raw_data)
+        df_x_full, heatmap = self.generate_feature_data(raw_data, column_data, df_y_full)
         df_all = pd.concat([df_x_full, df_y_full], axis=1)
 
         self.heatmap = heatmap
 
         return {'df_x_full': df_x_full, 'df_y_full': df_y_full}
 
-    def generate_column_data(self, source):
+    def generate_value_column_data(self, raw_data):
 
-        sorted_columns = sorted(source[source.keys()[0]].keys())
-
-        # Gather string values.
-        column_data = {}
-        for column in sorted_columns:
-            values = []
-            for _, single_source_value in source.iteritems():
-                if column in single_source_value.keys() and ',' in str(single_source_value[column]):
-                    values.extend([x.strip() for x in single_source_value[column].split(',')])
-                elif column in single_source_value.keys():
-                    if type(single_source_value[column]) == str:
-                        values.append(single_source_value[column].strip())
-            values = sorted(set(values))
-            column_data.update({column: values})
+        column_data = defaultdict(list)
+        # Collect all list value.
+        for _, raw_datum in raw_data.iteritems():
+            for key, value in raw_datum['feature_dict']['value_features'].iteritems():
+                if (type(value) == str or type(value) == unicode) and ',' in value:
+                    column_data[key].extend(value.split(','))
+                else:
+                    column_data[key] = None
+        # Remove duplicated list from column_data.
+        for _, value in column_data.iteritems():
+            if type(value) == list:
+                column_data[_] = sorted(set(value))
 
         return column_data
+
+    def generate_text_column_data(self, raw_data):
+
+        columns = []
+        for _, raw_datum in raw_data.iteritems():
+            for key, value in raw_datum['feature_dict']['text_features'].iteritems():
+                if value is not None:
+                    columns.extend([x.strip() for x in value.split(',')])
+
+        return sorted(set(columns))
 
     def generate_cost_data(self, source):
 

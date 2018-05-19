@@ -162,7 +162,7 @@ def register_heavy_feature_tag(handler, source):
         data = {
             'entity': single_source,
             'project': single_source['project'],
-            'duration': int(random.random() * 1000)
+            'duration': random.randint(500, 5000)
 
         }
 

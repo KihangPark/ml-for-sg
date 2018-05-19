@@ -15,7 +15,7 @@ class BaseSourceGenerator(object):
         self.generator_config = load_config()['source_generator']
 
     @abstractmethod
-    def generate_input_data(self, **kwargs):
+    def generate_source_data(self, **kwargs):
         raise NotImplementedError
 
 
