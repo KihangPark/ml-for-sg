@@ -1,6 +1,5 @@
 library_paths:
     shotgun: 'Z:\Dev\python-api'
-package_root: 'Z:\Dev\Github\ml-for-sg'
 
 model:
 trainer:

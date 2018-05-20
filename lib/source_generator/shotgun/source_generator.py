@@ -22,19 +22,19 @@ class ShotgunSourceGenerator(BaseSourceGenerator):
 
         self.handler = get_shotgun_handler(self.root_config)
         if not self.handler:
-            raise Exception('shotgun connection failed.')
+            raise Exception('Shotgun server connection fails.')
         self.data_config = self.generator_config['shotgun']['data']
-        self.source_schema = self.data_config['source_schema']
-        self.skip_features = self.data_config['skip_features']
         #self.keyword = self.data_config['keyword']
         #self.value = self.data_config['value']
         self.text = self.data_config['text']
         self.cost = self.data_config['cost']
+        self.source_schema = self.data_config['source_schema']
         self.skip_features = self.data_config['skip_features']
         self.resource_handler = ResourceHandler()
 
-    def generate_source_data(self):
+    def generate_source_data(self, project_id, limit=0):
 
+        '''
         # Get raw source.
         raw_source = self.get_raw_source()
 
@@ -42,8 +42,15 @@ class ShotgunSourceGenerator(BaseSourceGenerator):
         panda_data = self.convert_raw_source_to_panda_data(raw_source)
 
         return panda_data
+        '''
+        raw_data = self._get_raw_data(project_id, limit)
+        modified_raw_data = self._reformat_raw_data(raw_data)
+        panda_data = self._convert_raw_to_source_data(modified_raw_data)
+        return panda_data
 
-    def get_raw_data(self, project_id, limit=100):
+
+    def _get_raw_data(self, project_id, limit=0):
+        limit = 3
 
         # Generate filter for project.
         if project_id:
@@ -73,26 +80,19 @@ class ShotgunSourceGenerator(BaseSourceGenerator):
 
         return valid_sources
 
-    def convert_raw_to_source_data(self, raw_data):
-
-        modified_raw_data = self.reformat_raw_data(raw_data)
-        panda_data = self.convert_raw_to_panda(modified_raw_data)
-
-        return panda_data
-
-    def reformat_raw_shot_data(self, raw_shot_data, limit=0):
-        modified_raw_shot_data = dict()
+    def _reformat_raw_data(self, raw_data):
+        modified_raw_data = dict()
         schema_field_list = self.handler.schema_field_read('Task')
 
-        for raw_shot_datum in raw_shot_data:
+        for raw_datum in raw_data:
 
             task_sources = []
             cost_feature = 0
             text_feature = {}
-            for task in raw_shot_datum['tasks']:
+            for task in raw_datum['tasks']:
                 filters = [
                     [
-                        'project', 'is', {'type': 'Project', 'id': raw_shot_datum['project']['id']}
+                        'project', 'is', {'type': 'Project', 'id': raw_datum['project']['id']}
                     ], [
                         'id', 'is', task['id']
                     ]
@@ -108,11 +108,11 @@ class ShotgunSourceGenerator(BaseSourceGenerator):
                 cost_feature = cost_feature + task_source[self.cost]
 
             # Get text feature dict.
-            text_features, value_features = self.get_field_data(raw_shot_datum, self.text['feature_list'])
+            text_features, value_features = self._get_field_data(raw_datum, self.text['feature_list'])
 
-            modified_raw_shot_data.update({
-                raw_shot_datum['code']: {
-                'id': raw_shot_datum['id'],
+            modified_raw_data.update({
+                raw_datum['code']: {
+                'id': raw_datum['id'],
                 'feature_dict': {
                     'text_features': text_features,
                     'value_features': value_features
@@ -120,9 +120,84 @@ class ShotgunSourceGenerator(BaseSourceGenerator):
                 'cost': cost_feature}}
             )
 
-        return modified_raw_shot_data
+        return modified_raw_data
 
-    def get_field_data(self, raw_data, text_features):
+    def _convert_raw_to_source_data(self, modified_raw_data):
+
+        value_columns = self._generate_value_column_data(modified_raw_data)
+        text_columns = self._generate_text_column_data(modified_raw_data)
+
+        df_y_full = self._generate_cost_panda_data(modified_raw_data)
+        panda_data = self._generate_feature_panda_data(modified_raw_data, value_columns, text_columns)
+        df_x_full = panda_data['df_x']
+        df_x_text_full = panda_data['df_x_text']
+        return {
+            'df_x_full': df_x_full,
+            'df_x_text_full': df_x_text_full,
+            'df_y_full': df_y_full
+        }
+
+    def _generate_feature_panda_data(self, modified_raw_data, value_columns, text_columns):
+
+        heatmap = []
+        df_x_full = None
+        text_feature_index = []
+        value_feature_index = []
+        # text_feature_values = []
+        # print value_columns
+        for _, shot_values in modified_raw_data.iteritems():
+            for column, _ in shot_values['feature_dict']['value_features'].iteritems():
+                if value_columns[column] is None:
+                    value_feature_index.append(column)
+                else:
+                    for value in value_columns[column]:
+                        value_feature_index.append('{}__{}'.format(column, value))
+
+                        # text_feature_values = value['feature_dict']['text_features']
+                        # value_feature_values = value['feature_dict']['value_features']
+
+        value_feature_index = sorted(set(value_feature_index))
+        text_feature_index = sorted(set(text_columns))
+
+        df_x_values = []
+        df_x_text_values = []
+        value_feature_values = []
+        text_feature_values = []
+        cost_values = []
+
+        for shot_name, shot_datum in modified_raw_data.iteritems():
+            value_feature_values = []
+            cost_values.append(shot_datum['cost'])
+            for value_feature in value_feature_index:
+                if '__' in value_feature:
+                    column = value_feature.split('__')[0]
+                    sub_column = value_feature.split('__')[1]
+                    value_feature_values.append(
+                        1 if sub_column in shot_datum['feature_dict']['value_features'][column] else 0)
+                else:
+                    value_feature_values.append(shot_datum['feature_dict']['value_features'][value_feature])
+            df_x_values.append(value_feature_values)
+        for shot_name, shot_datum in modified_raw_data.iteritems():
+            text_feature_values = []
+            for text_feature in text_feature_index:
+                result = 0
+                for key, value in shot_datum['feature_dict']['text_features'].iteritems():
+                    if text_feature in value:
+                        result = 1
+                        break
+                text_feature_values.append(result)
+            df_x_text_values.append(text_feature_values)
+        print value_feature_index
+        print df_x_values
+        df_x = pd.DataFrame(df_x_values, index=modified_raw_data.keys(), columns=value_feature_index)
+        df_y = pd.DataFrame(cost_values, index=modified_raw_data.keys(), columns=['cost'])
+        df_x_text = pd.DataFrame(df_x_text_values, index=modified_raw_data.keys(), columns=text_feature_index)
+        print df_x
+        print df_y
+        print df_x_text
+        return {'df_x': df_x, 'df_x_text': df_x_text}
+
+    def _get_field_data(self, raw_data, text_features):
 
         text_feature_dict = dict()
         value_feature_dict = dict()
@@ -141,24 +216,24 @@ class ShotgunSourceGenerator(BaseSourceGenerator):
                     else:
                         list_value.append(value)
                 if list_value and isinstance(list_value[0], str):
-                    target_feature_dict.update({feature: self.get_word_list(','.join(list_value))})
+                    target_feature_dict.update({feature: self._get_word_list(','.join(list_value))})
                 if list_value and (isinstance(list_value[0], int) or isinstance(list_value[0], float)):
                     target_feature_dict.update({feature: sum(list_value)})
             elif isinstance(raw_data[feature], dict):
                 target_feature_dict[feature] = raw_data[feature]['name']
             else:
                 if feature in text_features:
-                    target_feature_dict.update({feature: self.get_word_list(raw_data[feature])})
+                    target_feature_dict.update({feature: self._get_word_list(raw_data[feature])})
                 else:
                     target_feature_dict.update({feature: raw_data[feature]})
         return text_feature_dict, value_feature_dict
 
-    def get_word_list(self, text):
+    def _get_word_list(self, text):
         count_vectorizer = CountVectorizer()
         count_vectorizer.fit_transform([text])
         feature_names = count_vectorizer.get_feature_names()
         return ','.join(feature_names)
-
+    '''
     def convert_raw_data_to_panda_source(self, raw_data):
         #source = MOCKED_SHOT_BASE_GENERATED_SOURCE
 
@@ -171,8 +246,9 @@ class ShotgunSourceGenerator(BaseSourceGenerator):
         self.heatmap = heatmap
 
         return {'df_x_full': df_x_full, 'df_y_full': df_y_full}
+    '''
 
-    def generate_value_column_data(self, raw_data):
+    def _generate_value_column_data(self, raw_data):
 
         column_data = defaultdict(list)
         # Collect all list value.
@@ -189,7 +265,7 @@ class ShotgunSourceGenerator(BaseSourceGenerator):
 
         return column_data
 
-    def generate_text_column_data(self, raw_data):
+    def _generate_text_column_data(self, raw_data):
 
         columns = []
         for _, raw_datum in raw_data.iteritems():
@@ -199,16 +275,17 @@ class ShotgunSourceGenerator(BaseSourceGenerator):
 
         return sorted(set(columns))
 
-    def generate_cost_data(self, source):
+    def _generate_cost_panda_data(self, modified_raw_data):
 
         indexes = []
         source_costs = []
-        for key in sorted(source):
+        for key in sorted(modified_raw_data):
             indexes.append(key)
-            source_costs.append(source[key]['cost'])
+            source_costs.append(modified_raw_data[key]['cost'])
 
         return pd.DataFrame(source_costs, index=indexes, columns=['cost'])
 
+    '''
     def generate_feature_data(self, source, column_data, df_y_full):
 
         heatmap = []
@@ -255,4 +332,5 @@ class ShotgunSourceGenerator(BaseSourceGenerator):
             heatmap.append((column, df_single, df_single.corr()))
 
         return df_x_full, heatmap
+    '''
 
