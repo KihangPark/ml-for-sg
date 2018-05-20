@@ -1,0 +1,44 @@
+import os
+import sys
+import argparse
+
+
+# Setup package root.
+root_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..')
+sys.path.append(root_dir)
+os.environ['ML_FOR_SG_ROOT'] = root_dir
+
+
+from lib.source_generator.shotgun.source_generator import ShotgunSourceGenerator
+
+
+def parse_argument(argv):
+    parser = argparse.ArgumentParser(
+        prog='shotgun_source_generator',
+        usage='Generate panda DataFrame based on shotgun field information',
+        description='description',
+        epilog='end',
+        add_help=True
+    )
+    parser.add_argument('-v', '--verbose', help='select mode',
+                        action='store_true')
+    parser.add_argument('-c', '--count', help='source count',
+                        default=3)
+    parser.add_argument('-p', '--project', help='project id',
+                        default=70)
+    args = parser.parse_args(args=argv)
+    return args
+
+
+def main(argv):
+    args = parse_argument(argv)
+
+    # Create shotgun data manager.
+    shotgun_source_generator = ShotgunSourceGenerator()
+
+    # Generate source data from shotgun.
+    source_data = shotgun_source_generator.generate_source_data(project_id=args.project, limit=args.count)
+
+
+if __name__ == '__main__':
+    main(sys.argv[2:])

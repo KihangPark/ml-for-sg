@@ -45,9 +45,9 @@ class ShotgunSourceGenerator(BaseSourceGenerator):
         '''
         raw_data = self._get_raw_data(project_id, limit)
         modified_raw_data = self._reformat_raw_data(raw_data)
-        panda_data = self._convert_raw_to_source_data(modified_raw_data)
-        return panda_data
-
+        source_data = self._convert_raw_to_source_data(modified_raw_data)
+        self.resource_handler.save_source_data(source_data)
+        return source_data
 
     def _get_raw_data(self, project_id, limit=0):
         limit = 3
