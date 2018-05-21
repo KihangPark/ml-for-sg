@@ -2236,5 +2236,3 @@ MOCKED_SHOT_BASE_GENERATED_SOURCE = {
     'type': 'Shot',
     'updated_by': 'Tom Luna'}}
 
-
-MOCKED_SHOT_RAW_DATA =

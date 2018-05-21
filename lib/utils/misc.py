@@ -5,7 +5,9 @@ import yaml
 def load_config():
 
     ml_for_sg_root = os.environ['ML_FOR_SG_ROOT']
-    config_file_path = os.path.abspath(os.path.join(ml_for_sg_root, 'config', 'config.yaml'))
+    config_file_path = os.path.abspath(
+        os.path.join(ml_for_sg_root, 'config', 'config.yaml')
+    )
     f = open(config_file_path, "r")
     config = yaml.load(f)
 

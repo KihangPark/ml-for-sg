@@ -1,4 +1,5 @@
 import sys
+import logging
 
 
 def get_shotgun_handler(root_config):
@@ -22,5 +23,7 @@ def get_shotgun_handler(root_config):
 
         return shotgun_handler
 
-    except:
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(e)
         return None
