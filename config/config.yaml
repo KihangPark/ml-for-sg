@@ -4,6 +4,7 @@ library_paths:
 model:
 trainer:
 data_processor:
+analyze_report_export_directory: './analyze_report'
 resource_handler:
 source_generator:
     shotgun:
