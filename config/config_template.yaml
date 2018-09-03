@@ -1,0 +1,21 @@
+library_paths:
+    shotgun: <shotgun api file path> # example : 'Z:\Dev\python-api'
+
+model:
+trainer:
+data_processor:
+analyze_report_export_directory: <directory for analyze report> # example : 'analyze_report'
+resource_handler:
+source_generator:
+    shotgun:
+        connection:
+            site: <shotgun site url> # example : 'https://test.shotgunstudio.com'
+            script_name: <script name> # example : 'tool_test'
+            api_key: <shotgun script api key>
+        data:
+            source_schema: 'Shot' # Target Granularity
+            text:
+                feature_list: ['description', 'tags', 'notes', 'open_notes']
+            cost: 'duration'
+            skip_features: ['id', 'created_at', 'image', 'project', 'updated_at']
+            source_includes: ['bunny_010_0010', 'bunny_010_0020', 'bunny_010_0030', 'bunny_010_0040', 'bunny_010_0050']
