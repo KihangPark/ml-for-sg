@@ -11,7 +11,6 @@ from lib.resource.resource_handler import ResourceHandler
 class FeatureAnalyzer(object):
 
     _resource_handler = None
-    _source_data = None
     _feature_analyze_report_file_name = None
 
     df_x_full = None
@@ -21,7 +20,7 @@ class FeatureAnalyzer(object):
     def __init__(self, df_x_full=None, df_x_text_full=None, df_y_full=None):
         self._resource_handler = ResourceHandler()
         self._feature_analyze_report_file_name = self._resource_handler.get_feature_analyze_report_file_name()
-        if not df_x_full or df_x_text_full or not df_y_full:
+        if not df_x_full or not df_x_text_full or not df_y_full:
             self._load_source_data()
         else:
             self.df_x_full = df_x_full
@@ -95,6 +94,7 @@ import os
 os.environ['ML_FOR_SG_ROOT'] = '{}'
 import sys
 sys.path.append(os.environ['ML_FOR_SG_ROOT'])
+import pandas
 
 # Set for inline graph.
 import seaborn as sns

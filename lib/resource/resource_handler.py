@@ -1,6 +1,7 @@
 import os
 import yaml
 import pandas as pd
+from sklearn.externals import joblib
 
 
 from lib.utils.misc import (
@@ -24,7 +25,7 @@ class ResourceHandler(object):
         self.resource_data_file_name = self._generate_resource_data_file_name()
         self.source_analyze_report_file_name = self._generate_source_data_file_name()
         self.train_result_report_file_name = self._generate_train_result_report_file_name()
-        self.analyze_report_directory = load_config()['analyze_report_export_directory']
+        self.analyze_report_directory = os.path.join(self.package_root, load_config()['analyze_report_export_directory'])
         self.source_convert_config_file_name = self._generate_source_convert_config_file_name()
 
     def _generate_raw_data_file_name(self):
@@ -81,7 +82,7 @@ class ResourceHandler(object):
         source_data['df_x_text_full'].to_csv(df_x_text_full, mode='w', sep=',')
         source_data['df_y_full'].to_csv(df_y_full, mode='w', sep=',')
 
-    def save_resource_data(self):
+    def convert_source_to_resource(self):
         data = self._generate_resource_data_file_name()
         df_x_full_file_name = data['df_x_full']
         df_x_text_full_file_name = data['df_x_text_full']
@@ -132,9 +133,6 @@ class ResourceHandler(object):
     def load_source_analyze_configure(self):
         return None
 
-    def load_train_result(self):
-        return None
-
     def save_source_convert_config(self, data):
         with open(self.source_convert_config_file_name, 'w') as outfile:
             yaml.dump(data, outfile, default_flow_style=False)
@@ -162,4 +160,24 @@ class ResourceHandler(object):
             [df_without_string_columns, df_with_string_columns],
             axis=1)
         return df_full
+
+    def save_trained_model(self, model_type, model):
+        model_file_name = self._generate_trained_model_file_name(model_type)
+        joblib.dump(model, model_file_name)
+
+    def load_trained_model(self, model_type):
+        model_file_name = self._generate_trained_model_file_name(model_type)
+        return joblib.load(model_file_name)
+
+    def _generate_trained_model_file_name(self, model_type):
+        trained_model_data_dir = os.path.join(
+            self.package_root,
+            'trained_model_data'
+        )
+        if not os.path.exists(trained_model_data_dir):
+            os.mkdir(trained_model_data_dir)
+        return os.path.join(
+            trained_model_data_dir,
+            model_type + '.model'
+        )
 

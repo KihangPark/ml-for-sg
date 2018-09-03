@@ -26,6 +26,7 @@ class ShotgunSourceGenerator(BaseSourceGenerator):
         self.cost = self.data_config['cost']
         self.source_schema = self.data_config['source_schema']
         self.skip_features = self.data_config['skip_features']
+        self.source_includes = self.data_config['source_includes']
 
         # Get resource handler instance for save / load source data file.
         self.resource_handler = ResourceHandler()
@@ -76,6 +77,14 @@ class ShotgunSourceGenerator(BaseSourceGenerator):
                 'id': project_id}
         ]]
 
+        # Generate source filter.
+        if self.source_includes:
+            filters.append(
+                [
+                    'code', 'in', self.source_includes
+                ]
+            )
+
         # Get raw data from shotgun.
         schema_field_list = self.handler.schema_field_read(self.source_schema)
         raw_data = self.handler.find(
@@ -98,7 +107,7 @@ class ShotgunSourceGenerator(BaseSourceGenerator):
         """Calculate shot cost and reformat raw data for panda data convert.
 
         Args:
-            raw_data (dict): dictionary which contains raw field information
+            raw_data (list): dictionary which contains raw field information
                             from shotgun.
 
         """
