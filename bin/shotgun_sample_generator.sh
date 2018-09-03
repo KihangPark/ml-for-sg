@@ -1,1 +1,0 @@
-python shotgun_sample_generator
