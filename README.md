@@ -23,9 +23,9 @@ Below template workflow can be useful for using this package.
 
 Upper basic workflow is based on below three sub parts.
 
-A. Generate source data based on shotgun information.
-B. Analyze based on A and generate re-source data based on analyzed results.
-C. Generate machine learning model based on re-source and get prediction.
+1. Generate source data based on shotgun information.
+2. Analyze based on A and generate re-source data based on analyzed results.
+3. Generate machine learning model based on re-source and get prediction.
 
 # Detail workflow
 
